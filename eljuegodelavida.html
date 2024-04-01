@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de la Vida by. Metzli</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+
+        // Config inicial
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.z = 50;
+
+        // Crear una celda
+        function createCell(x, y, size) {
+            const geometry = new THREE.BoxGeometry(size, size, size);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Cambiar color aquí
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.x = x * size;
+            cube.position.y = y * size;
+            return cube;
+        }
+
+        // Inicializar el tablero con celdas vivas o muertas aleatorias
+        function initBoard(size, density) {
+            const board = [];
+            for (let x = 0; x < size; x++) {
+                board[x] = [];
+                for (let y = 0; y < size; y++) {
+                    board[x][y] = Math.random() < density ? 1 : 0;
+                }
+            }
+            return board;
+        }
+
+        // Actualizar el estado del tablero según las reglas del Juego de la Vida
+        function updateBoard(board) {
+            const newBoard = [];
+            for (let x = 0; x < board.length; x++) {
+                newBoard[x] = [];
+                for (let y = 0; y < board[x].length; y++) {
+                    const neighbors = countNeighbors(board, x, y);
+                    if (board[x][y] === 1 && (neighbors < 2 || neighbors > 3)) {
+                        newBoard[x][y] = 0; // Muere por soledad o superpoblación
+                    } else if (board[x][y] === 0 && neighbors === 3) {
+                        newBoard[x][y] = 1; 
+                    } else {
+                        newBoard[x][y] = board[x][y]; // Mantiene el estado actual
+                    }
+                }
+            }
+            return newBoard;
+        }
+
+        // Contar el num de celulas vivas
+        function countNeighbors(board, x, y) {
+            let count = 0;
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    const nx = x + i;
+                    const ny = y + j;
+                    if (nx >= 0 && nx < board.length && ny >= 0 && ny < board[x].length) {
+                        count += board[nx][ny];
+                    }
+                }
+            }
+            count -= board[x][y];
+            return count;
+        }
+
+        // Configuración inicial de mi tablero
+        const boardSize = 20;
+        const cellSize = 1;
+        const density = 0.3;
+        let board = initBoard(boardSize, density);
+
+        // Celdas
+        const cells = [];
+        for (let x = 0; x < board.length; x++) {
+            for (let y = 0; y < board[x].length; y++) {
+                if (board[x][y] === 1) {
+                    const cell = createCell(x - boardSize / 2, y - boardSize / 2, cellSize);
+                    cells.push(cell);
+                    scene.add(cell);
+                }
+            }
+        }
+
+        // Animacion
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+
+            // Actualiza el tablero y las celdas cada cuadro
+            board = updateBoard(board);
+            for (let i = 0; i < cells.length; i++) {
+                const x = i % boardSize;
+                const y = Math.floor(i / boardSize);
+                if (board[x][y] === 0) {
+                    cells[i].visible = false;
+                } else {
+                    cells[i].visible = true;
+                }
+            }
+        }
+        animate();
+
+    </script>
+</body>
+</html>
